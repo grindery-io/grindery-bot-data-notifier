@@ -2,30 +2,54 @@ import { TABLE_ID_FLOWS, TABLE_ID_MESSAGES, TABLE_ID_TASKS } from '../utils/cont
 import { BigQueryService } from './big-query-service.js';
 
 export class DataImporterService {
-
     constructor() {
         this.bigQueryService = new BigQueryService();
+        this.batchSize = 1_000;
+        this.batches = {
+            [TABLE_ID_FLOWS]: [],
+            [TABLE_ID_TASKS]: [],
+            [TABLE_ID_MESSAGES]: [],
+          };
+          this.batchesCopy = {};
     }
 
     async importToBigQuery(payload) {
-        let isSuccess = false;
-
-        switch(payload.type) {
-            case TABLE_ID_FLOWS:
-                isSuccess = await this.bigQueryService.insert(TABLE_ID_FLOWS, this.formatFlowsPayload(payload))
-                break;
-            case TABLE_ID_TASKS:
-                isSuccess = await this.bigQueryService.insert(TABLE_ID_TASKS, this.formatTasksPayload(payload))
-                break;
-            case TABLE_ID_MESSAGES:
-                isSuccess = await this.bigQueryService.insert(TABLE_ID_MESSAGES, this.formatMessagesPayload(payload))
-                break;
-            default:
-                isSuccess = true;
+        this.batches[payload.type].push(payload);
+    
+        if (this.batches[payload.type].length >= this.batchSize) {
+          this.batchesCopy[payload.type] = [...this.batches[payload.type]];
+          this.batches[payload.type] = [];
+          await this.processBatch(payload.type);
         }
-
-        return isSuccess
-    }
+    
+        return true;
+      }
+    
+      async processBatch(tableId) {
+        console.log(`Processing batch table id '${tableId}' length ${this.batchesCopy[tableId].length}`);
+    
+        if (this.batchesCopy[tableId].length === 0) {
+          return;
+        }
+    
+        const formattedBatch = this.batchesCopy[tableId].map((item) => {
+          switch (item.type) {
+            case TABLE_ID_FLOWS:
+              return this.formatFlowsPayload(item);
+            case TABLE_ID_TASKS:
+              return this.formatTasksPayload(item);
+            case TABLE_ID_MESSAGES:
+              return this.formatMessagesPayload(item);
+            default:
+              return null;
+          }
+        }).filter(Boolean); // Remove null entries
+    
+        if (formattedBatch.length > 0) {
+          await this.bigQueryService.insert(tableId, formattedBatch);
+          this.batchesCopy[tableId] = [];
+        }
+      }
 
     formatFlowsPayload(payload) {
         return {
@@ -106,4 +130,3 @@ export class DataImporterService {
         };
     }
 }
-

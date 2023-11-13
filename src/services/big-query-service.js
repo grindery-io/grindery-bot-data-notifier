@@ -12,10 +12,8 @@ export class BigQueryService {
                 .dataset(this.datasetId)
                 .table(tableId)
                 .insert(payload);
-            return true;
         } catch(error) {
             console.error('Error import to BigQuery', JSON.stringify(error.errors));
-            return false;
         }
     }
 }
