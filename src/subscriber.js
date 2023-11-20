@@ -26,12 +26,12 @@ const subscriber = () => {
           const messageDataString = message.data.toString();
           const messageData = JSON.parse(messageDataString);
           
-      // console.log(
-      //   `Received message [${message.id},${
-      //     message.deliveryAttempt
-      //   },${message.publishTime.toISOString()}]:`,
-      //   JSON.stringify(messageData, null, 2)
-      // );
+      console.log(
+        `Received message [${message.id},${
+          message.deliveryAttempt
+        },${message.publishTime.toISOString()}]:`,
+        JSON.stringify(messageData, null, 2)
+      );
       
       const deadline = Date.now() / 1000 - 60 * 60 * 24; // 1 day ago
       if (
@@ -56,10 +56,10 @@ const subscriber = () => {
           throw new Error('Error processing event');
         }
   
-        // console.log(
-        //   'Acknowledged message:',
-        //   JSON.stringify(messageData, null, 2)
-        // );
+        console.log(
+          'Acknowledged message:',
+          JSON.stringify(messageData, null, 2)
+        );
 
         setTimeout(() => message.ack(), 0);
        } catch (error) {
