@@ -1,5 +1,6 @@
 import express from 'express';
 import './src/subscriber.js';
+import './src/scripts/cronjob.js';
 
 const app = express();
 
