@@ -476,7 +476,6 @@ export const importOrUpdateWalletUsersLast2Hours = async () => {
         console.log(
           `BIGQUERY - Wallet User Telegram ID (${walletFormatted.userTelegramID}) does not exist`,
         );
-        console.log(walletFormatted);
 
         await bigqueryClient
           .dataset(datasetId)
@@ -558,5 +557,3 @@ async function checkWalletInBigQuery(userTelegramID) {
   const [rows] = await bigqueryClient.query(query);
   return rows.length > 0;
 }
-
-importOrUpdateWalletUsersLast2Hours();

@@ -9,3 +9,6 @@ export const DATA_SET_ID = 'telegram';
 export const USERS_COLLECTION = 'users';
 export const TRANSFERS_COLLECTION = 'transfers';
 export const WALLET_USERS_COLLECTION = 'wallet-users';
+export const SWAPS_COLLECTION = 'swaps';
+
+export const STATUS_SUCCESS = 'success';
