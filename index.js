@@ -5,7 +5,7 @@ import './src/scripts/cronjob.js';
 const app = express();
 
 app.get('/', (req, res) => {
-  res.send("Health Check");
+  res.send('Health Check');
 });
 
 const port = process.env.PORT || 3000;

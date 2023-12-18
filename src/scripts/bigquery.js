@@ -1,7 +1,15 @@
 import { Database } from '../db/conn.js';
 import { BigQuery } from '@google-cloud/bigquery';
 import web3 from 'web3';
-import { DATA_SET_ID, TABLE_ID_TRANSFERS, TABLE_ID_USERS, TABLE_ID_WALLET_USERS, TRANSFERS_COLLECTION, USERS_COLLECTION, WALLET_USERS_COLLECTION } from '../utils/contants.js';
+import {
+  DATA_SET_ID,
+  TABLE_ID_TRANSFERS,
+  TABLE_ID_USERS,
+  TABLE_ID_WALLET_USERS,
+  TRANSFERS_COLLECTION,
+  USERS_COLLECTION,
+  WALLET_USERS_COLLECTION,
+} from '../utils/contants.js';
 
 const bigqueryClient = new BigQuery();
 const datasetId = DATA_SET_ID;
@@ -156,57 +164,57 @@ const importTransfers = async () => {
 };
 
 export const importWalletUsers = async () => {
-    const db = await Database.getInstance();
-    const collection = db.collection(WALLET_USERS_COLLECTION);
-  
-    // Get all users from the database
-    const allWalletUsers = await collection.find({}).toArray();
-  
-    if (allWalletUsers.length === 0) {
-      console.log('BIGQUERY - No wallet users found in MongoDB.');
-      process.exit(0);
-    }
-  
-    const batchSize = 3000;
-    let importedCount = 0;
-  
-    for (let i = 0; i < allWalletUsers.length; i += batchSize) {
-      console.log(
-        `BIGQUERY - importedCount ${importedCount} i ${i} allWalletUsers ${allWalletUsers.length}`,
-      );
-      const batch = allWalletUsers.slice(i, i + batchSize);
-  
-      if (batch.length !== 0) {
-        const bigQueryData = batch.map((wallet) => {
-          return {
-            userTelegramID: wallet.userTelegramID ? wallet.userTelegramID : null,
-            webAppOpened: wallet.webAppOpened ? wallet.webAppOpened : null,
-            webAppOpenedFirstDate: wallet.webAppOpenedFirstDate
-              ? wallet.webAppOpenedFirstDate
-              : null,
-            webAppOpenedLastDate: wallet.webAppOpenedLastDate
-              ? wallet.webAppOpenedLastDate
-              : null,
-            telegramSessionSavedDate: wallet.telegramSessionSavedDate
-              ? wallet.telegramSessionSavedDate
-              : null,
-            dateAdded: wallet.dateAdded ? wallet.dateAdded : null,
-            balance: wallet.balance ? JSON.stringify(wallet.balance) : null,
-            debug: wallet.debug ? JSON.stringify(wallet.debug) : null,
-          };
-        });
-  
-        await bigqueryClient
-          .dataset(datasetId)
-          .table(TABLE_ID_WALLET_USERS)
-          .insert(bigQueryData);
-      }
-  
-      importedCount += batch.length;
-    }
-  
+  const db = await Database.getInstance();
+  const collection = db.collection(WALLET_USERS_COLLECTION);
+
+  // Get all users from the database
+  const allWalletUsers = await collection.find({}).toArray();
+
+  if (allWalletUsers.length === 0) {
+    console.log('BIGQUERY - No wallet users found in MongoDB.');
     process.exit(0);
-  };
+  }
+
+  const batchSize = 3000;
+  let importedCount = 0;
+
+  for (let i = 0; i < allWalletUsers.length; i += batchSize) {
+    console.log(
+      `BIGQUERY - importedCount ${importedCount} i ${i} allWalletUsers ${allWalletUsers.length}`,
+    );
+    const batch = allWalletUsers.slice(i, i + batchSize);
+
+    if (batch.length !== 0) {
+      const bigQueryData = batch.map((wallet) => {
+        return {
+          userTelegramID: wallet.userTelegramID ? wallet.userTelegramID : null,
+          webAppOpened: wallet.webAppOpened ? wallet.webAppOpened : null,
+          webAppOpenedFirstDate: wallet.webAppOpenedFirstDate
+            ? wallet.webAppOpenedFirstDate
+            : null,
+          webAppOpenedLastDate: wallet.webAppOpenedLastDate
+            ? wallet.webAppOpenedLastDate
+            : null,
+          telegramSessionSavedDate: wallet.telegramSessionSavedDate
+            ? wallet.telegramSessionSavedDate
+            : null,
+          dateAdded: wallet.dateAdded ? wallet.dateAdded : null,
+          balance: wallet.balance ? JSON.stringify(wallet.balance) : null,
+          debug: wallet.debug ? JSON.stringify(wallet.debug) : null,
+        };
+      });
+
+      await bigqueryClient
+        .dataset(datasetId)
+        .table(TABLE_ID_WALLET_USERS)
+        .insert(bigQueryData);
+    }
+
+    importedCount += batch.length;
+  }
+
+  process.exit(0);
+};
 
 export const importUsersLast4Hours = async () => {
   const db = await Database.getInstance();
@@ -498,11 +506,7 @@ async function getExistingPatchwallets(tableId) {
   return rows.map((row) => web3.utils.toChecksumAddress(row.patchwallet));
 }
 
-async function getExistingPatchwalletsLast24Hours(
-  tableId,
-  startDate,
-  endDate
-) {
+async function getExistingPatchwalletsLast24Hours(tableId, startDate, endDate) {
   const formattedStartDate = startDate.toISOString();
   const formattedEndDate = endDate.toISOString();
 
@@ -528,7 +532,7 @@ async function getExistingTransactionHashes(tableId) {
 async function getExistingTransactionHashesLast24Hours(
   tableId,
   startDate,
-  endDate
+  endDate,
 ) {
   const formattedStartDate = startDate.toISOString();
   const formattedEndDate = endDate.toISOString();
