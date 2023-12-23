@@ -3,6 +3,8 @@ import { BigQuery } from '@google-cloud/bigquery';
 import web3 from 'web3';
 import {
   DATA_SET_ID,
+  STATUS_SUCCESS,
+  SWAPS_COLLECTION,
   TABLE_ID_TRANSFERS,
   TABLE_ID_USERS,
   TABLE_ID_WALLET_USERS,
@@ -10,6 +12,7 @@ import {
   USERS_COLLECTION,
   WALLET_USERS_COLLECTION,
 } from '../utils/contants.js';
+import axios from 'axios';
 
 const bigqueryClient = new BigQuery();
 const datasetId = DATA_SET_ID;
@@ -418,6 +421,38 @@ export const importOrUpdateWalletUsersLast2Hours = async () => {
         wallet.userTelegramID,
       );
 
+      const swapsCount = await db.collection(SWAPS_COLLECTION).countDocuments({
+        userTelegramID: wallet.userTelegramID,
+        status: STATUS_SUCCESS,
+      });
+
+      const transfersCount = await db
+        .collection(TRANSFERS_COLLECTION)
+        .countDocuments({
+          senderTgId: wallet.userTelegramID,
+          status: STATUS_SUCCESS,
+        });
+
+      let stakedAmount = 0.0;
+
+      try {
+        stakedAmount = (
+          await axios.get(
+            `https://wallet-api.grindery.io/v2/stake/${wallet.userTelegramID}`,
+            {
+              timeout: 100000,
+              headers: {
+                Authorization: `Bearer ${process.env.API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+            },
+          )
+        ).data?.amount;
+      } catch (error) {
+        console.log(`BIGQUERY - Error getting stake amount ${error})`);
+        stakedAmount = 0.0;
+      }
+
       const walletFormatted = {
         userTelegramID: wallet.userTelegramID ? wallet.userTelegramID : null,
         webAppOpened: wallet.webAppOpened ? wallet.webAppOpened : null,
@@ -433,6 +468,9 @@ export const importOrUpdateWalletUsersLast2Hours = async () => {
         dateAdded: wallet.dateAdded ? wallet.dateAdded : null,
         balance: wallet.balance ? JSON.stringify(wallet.balance) : null,
         debug: wallet.debug ? JSON.stringify(wallet.debug) : null,
+        swapsCount: swapsCount ? swapsCount : 0,
+        transfersCount: transfersCount ? transfersCount : 0,
+        stakedAmount: stakedAmount ? stakedAmount : 0.0,
       };
 
       if (walletExistsInBigQuery) {
@@ -449,7 +487,10 @@ export const importOrUpdateWalletUsersLast2Hours = async () => {
             telegramSessionSavedDate = @telegramSessionSavedDate,
             dateAdded = @dateAdded,
             balance = @balance,
-            debug = @debug
+            debug = @debug,
+            swapsCount = @swapsCount,
+            transfersCount = @transfersCount,
+            stakedAmount = @stakedAmount
           WHERE userTelegramID = @userTelegramID
         `;
 
@@ -465,6 +506,9 @@ export const importOrUpdateWalletUsersLast2Hours = async () => {
             balance: 'STRING',
             debug: 'STRING',
             userTelegramID: 'STRING',
+            swapsCount: 'STRING',
+            transfersCount: 'STRING',
+            stakedAmount: 'STRING',
           },
         };
 
@@ -557,3 +601,5 @@ async function checkWalletInBigQuery(userTelegramID) {
   const [rows] = await bigqueryClient.query(query);
   return rows.length > 0;
 }
+
+importOrUpdateWalletUsersLast2Hours();
